@@ -1,4 +1,4 @@
-# Shopify SDK
+# Shopify Client SDK
 
 A comprehensive Shopify API SDK with GraphQL support, automatic retry handling, and type safety for Node.js applications.
 
@@ -17,7 +17,7 @@ A comprehensive Shopify API SDK with GraphQL support, automatic retry handling, 
 ## Installation
 
 ```bash
-npm install @your-package/shopify-sdk
+npm install shopify-client-sdk
 ```
 
 ## Getting Started
@@ -25,7 +25,7 @@ npm install @your-package/shopify-sdk
 ### Basic Usage
 
 ```typescript
-import { ShopifySDK, ShopifyConfig } from '@your-package/shopify-sdk';
+import { ShopifySDK, ShopifyConfig } from 'shopify-client-sdk';
 
 // Initialize SDK with store credentials
 const config: ShopifyConfig = {
@@ -55,6 +55,174 @@ const allProducts = await shopify.paginator.fetchAll(async (options) => {
 ```
 
 ## Services
+
+### Bulk Operation Service
+
+```typescript
+import { ShopifySDK, ShopifyConfig } from 'shopify-client-sdk';
+
+const config: ShopifyConfig = {
+  storeDomain: 'your-store.myshopify.com',
+  apiVersion: '2023-10',
+  accessToken: 'your-api-access-token'
+};
+
+const shopify = new ShopifySDK(config);
+
+// Run bulk query
+const query = `
+  {
+    products(first: 100) {
+      edges {
+        node {
+          id
+          title
+          vendor
+          variants(first: 10) {
+            edges {
+              node {
+                id
+                title
+                price
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+// Run and poll for completion
+const operation = await shopify.bulkOperations.runAndPollQuery(query);
+
+// Download and parse results
+if (operation.status === 'COMPLETED') {
+  const jsonlData = await shopify.bulkOperations.downloadResults(operation.url!);
+  const results = await shopify.bulkOperations.parseResults(jsonlData);
+  console.log(`Downloaded ${results.length} records`);
+}
+```
+
+## Bulk Operations Configuration
+
+### Advanced Bulk Operations
+
+```typescript
+// Configure poll interval and timeout
+const operation = await shopify.bulkOperations.runAndPollQuery(
+  query,
+  5000,  // Poll every 5 seconds
+  180000  // Timeout after 3 minutes
+);
+
+// Custom polling logic
+const operation = await shopify.bulkOperations.runQuery(query);
+const completedOperation = await shopify.bulkOperations.pollOperation(
+  operation.id,
+  2000,  // Poll every 2 seconds
+  120000  // Timeout after 2 minutes
+);
+
+// Check for active operations
+const currentOperation = await shopify.bulkOperations.getCurrentOperation();
+if (currentOperation && currentOperation.status === 'RUNNING') {
+  console.log('Active operation in progress...');
+}
+```
+
+### Bulk Operation Types
+
+#### Product Export
+```typescript
+const productQuery = `
+  {
+    products(first: 200) {
+      edges {
+        node {
+          id
+          title
+          vendor
+          productType
+          handle
+          tags
+          variants(first: 20) {
+            edges {
+              node {
+                id
+                title
+                price
+                sku
+                inventoryQuantity
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+```
+
+#### Order Export
+```typescript
+const orderQuery = `
+  {
+    orders(first: 100) {
+      edges {
+        node {
+          id
+          name
+          orderNumber
+          email
+          financialStatus
+          fulfillmentStatus
+          totalPrice
+          lineItems(first: 10) {
+            edges {
+              node {
+                id
+                title
+                quantity
+                price
+                variant {
+                  id
+                  sku
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+```
+
+### Error Handling for Bulk Operations
+
+```typescript
+try {
+  const operation = await shopify.bulkOperations.runAndPollQuery(query);
+  
+  if (operation.status === 'FAILED') {
+    console.error('Operation failed:', operation.errorCode, operation.errorMessage);
+    return;
+  }
+
+  const jsonlData = await shopify.bulkOperations.downloadResults(operation.url!);
+  const results = await shopify.bulkOperations.parseResults(jsonlData);
+  
+  console.log(`Successfully processed ${results.length} records`);
+
+} catch (error) {
+  if (error.message.includes('timeout')) {
+    console.error('Operation timed out');
+  } else {
+    console.error('Error:', error);
+  }
+}
+```
 
 ### Product Service
 

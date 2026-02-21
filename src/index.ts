@@ -5,6 +5,7 @@ import { ProductService } from './services/product.service';
 import { OrderService } from './services/order.service';
 import { InventoryService } from './services/inventory.service';
 import { UploadService } from './services/upload.service';
+import { BulkOperationService } from './services/bulkOperation.service';
 import { Paginator } from './utils/paginator';
 
 export class ShopifySDK {
@@ -14,6 +15,7 @@ export class ShopifySDK {
   public orders: OrderService;
   public inventory: InventoryService;
   public uploads: UploadService;
+  public bulkOperations: BulkOperationService;
   public paginator: Paginator;
 
   constructor(config: ShopifyConfig) {
@@ -23,6 +25,7 @@ export class ShopifySDK {
     this.orders = new OrderService(this.client);
     this.inventory = new InventoryService(this.client);
     this.uploads = new UploadService(this.client);
+    this.bulkOperations = new BulkOperationService(this.client);
     this.paginator = new Paginator();
   }
 
@@ -40,4 +43,5 @@ export * from './services/product.service';
 export * from './services/order.service';
 export * from './services/inventory.service';
 export * from './services/upload.service';
+export * from './services/bulkOperation.service';
 export { Paginator } from './utils/paginator';
